@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ASHFALL</title>
+<link rel="stylesheet" href="style.css">
+<script type="importmap">{ "imports": { "three": "/vendor/three/three.module.js" } }</script>
+</head>
+<body>
+<canvas id="gl"></canvas>
+
+<!-- ============ HUD ============ -->
+<div id="hud" class="hidden">
+  <div id="crosshair"><i></i><i></i><i></i><i></i></div>
+  <div id="hitmarker"></div>
+  <div id="scope"></div>
+  <div id="dmgflash"></div>
+  <div id="dmgarrow"></div>
+  <div id="topbar"><div id="mode"></div><div id="timer">--:--</div></div>
+  <div id="extract"><div id="extext"></div><div id="exbar"><b></b></div></div>
+  <div id="team"></div>
+  <div id="killfeed"></div>
+  <div id="notice"></div>
+  <div id="prompt"></div>
+  <div id="vitals">
+    <div class="bar hp"><b id="hpfill"></b><span id="hptext">100</span></div>
+    <div class="bar ar"><b id="arfill"></b><span id="artext">0</span></div>
+    <div id="carry">LOOT <em id="carryval">$0</em> &nbsp; <em id="carrywt">0/20 kg</em></div>
+  </div>
+  <div id="ammo"><div id="wname">AK-74M</div><div><span id="mag">30</span><small> / </small><span id="res">90</span></div><div id="wslots"></div></div>
+  <div id="ping">--</div>
+  <div id="conn" class="hidden"></div>
+</div>
+
+<div id="scoreboard" class="overlay hidden"><div class="box"><h2>SCOREBOARD</h2><table id="sbtable"></table></div></div>
+
+<!-- ============ In-game overlays ============ -->
+<div id="inv" class="overlay hidden">
+  <div class="box wide">
+    <h2>INVENTORY <small id="invstash"></small></h2>
+    <div class="invlayout">
+      <div>
+        <div id="invgrid"></div>
+        <div id="invweight"><b></b><span></span></div>
+        <p class="hint">Click: use / equip &nbsp;·&nbsp; Right-click: discard &nbsp;·&nbsp; Drag: move &nbsp;·&nbsp; [I] close</p>
+      </div>
+      <div class="side">
+        <div id="invweapons"></div>
+        <div id="invdesc"><em>Hover an item to inspect it.</em></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="pause" class="overlay hidden"><div class="box">
+  <h2>PAUSED</h2><p class="hint">The raid continues while you are paused.</p>
+  <button id="resume" class="btn big">RESUME</button>
+  <button id="leave" class="btn">LEAVE RAID</button>
+</div></div>
+
+<div id="death" class="overlay hidden red"><div class="box"><h2>KILLED IN ACTION</h2><p id="deathtext"></p><p class="hint" id="deathtimer"></p></div></div>
+<div id="exfil" class="overlay hidden green"><div class="box"><h2>EXTRACTED</h2><p id="exfiltext"></p><p class="hint" id="exfiltimer"></p></div></div>
+<div id="roundend" class="overlay hidden"><div class="box"><h2>ROUND OVER</h2><table id="retable"></table><button class="btn" id="reclose">CONTINUE</button></div></div>
+
+<!-- ============ Main menu ============ -->
+<div id="menu" class="overlay">
+  <div id="menubox">
+    <div id="logo">ASH<span>FALL</span></div>
+    <div id="menumsg" class="hidden"></div>
+
+    <section class="panel" id="p-main">
+      <button class="btn big" data-go="play">PLAY</button>
+      <button class="btn" data-go="operators">OPERATORS</button>
+      <button class="btn" data-go="loadout">LOADOUT</button>
+      <button class="btn" data-go="inventory">INVENTORY</button>
+      <button class="btn" data-go="settings">SETTINGS</button>
+      <button class="btn" id="exit">EXIT</button>
+    </section>
+
+    <section class="panel hidden" id="p-play">
+      <h3>DEPLOY</h3>
+      <label>CALLSIGN <input id="name" maxlength="14" placeholder="Operator" autocomplete="off"></label>
+      <div id="modes"></div>
+      <button class="btn big" id="deploy">DEPLOY</button>
+      <button class="btn back" data-go="main">BACK</button>
+    </section>
+
+    <section class="panel hidden" id="p-operators">
+      <h3>OPERATORS</h3>
+      <div id="oplist"></div>
+      <button class="btn back" data-go="main">BACK</button>
+    </section>
+
+    <section class="panel hidden" id="p-loadout">
+      <h3>LOADOUT</h3>
+      <p class="hint">Primary weapon you deploy with. Everyone carries a P226 sidearm. Find shotguns, snipers and more in the field.</p>
+      <div id="loadlist"></div>
+      <button class="btn back" data-go="main">BACK</button>
+    </section>
+
+    <section class="panel hidden" id="p-inventory">
+      <h3>INVENTORY</h3>
+      <div id="stashbox"><span>STASH</span><b id="stashval">$0</b></div>
+      <p class="hint">Extract with loot to bank its value here (saved in this browser).<br>
+      <b>Controls</b> — WASD move · Shift sprint · Ctrl/C crouch · Space jump · LMB fire · RMB aim · R reload · 1-5 / wheel weapons · E loot · H medkit · I inventory · Tab scoreboard</p>
+      <button class="btn back" data-go="main">BACK</button>
+    </section>
+
+    <section class="panel hidden" id="p-settings">
+      <h3>SETTINGS</h3>
+      <label>MOUSE SENSITIVITY <input type="range" id="s-sens" min="0.2" max="3" step="0.1"><output></output></label>
+      <label>FIELD OF VIEW <input type="range" id="s-fov" min="60" max="110" step="1"><output></output></label>
+      <label>VOLUME <input type="range" id="s-vol" min="0" max="100" step="1"><output></output></label>
+      <label>GRAPHICS <select id="s-q"><option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option><option value="ultra">Ultra</option></select></label>
+      <label>TIME OF DAY <select id="s-tod"><option value="day">Day</option><option value="dusk">Dusk</option><option value="night">Night</option></select></label>
+      <button class="btn back" data-go="main">BACK</button>
+    </section>
+  </div>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script type="module" src="main.js"></script>
+</body>
+</html>

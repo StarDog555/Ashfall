@@ -1,0 +1,15 @@
+{
+  "name": "ashfall-demo",
+  "version": "0.1.0",
+  "description": "ASHFALL - small multiplayer extraction FPS demo (Three.js + Socket.IO)",
+  "type": "module",
+  "main": "server/server.js",
+  "scripts": {
+    "start": "node server/server.js"
+  },
+  "engines": { "node": ">=18" },
+  "dependencies": {
+    "socket.io": "^4.7.5",
+    "three": "0.160.0"
+  }
+}
